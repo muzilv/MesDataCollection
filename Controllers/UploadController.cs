@@ -30,6 +30,11 @@ namespace MesDataCollection.Controllers
             Configuration = builder.Build();
         }
 
+        /// <summary>
+        /// 数据接入API
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("api/[controller]")]
         public async Task<IActionResult> Post([FromBody] UploadModel model)
@@ -41,8 +46,6 @@ namespace MesDataCollection.Controllers
                 {
                     return BadRequest("No data provided.");
                 }
-
-                // 检查表是否存在，如果不存在则创建表
                 if (!await _databaseService.TableExistsAsync())
                 {
                     await _databaseService.CreateTableAsync();

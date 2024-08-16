@@ -19,7 +19,7 @@ namespace MesDataCollection.Repository
         {
         }
 
-        public async Task SaveUploadModelAsync(UploadModel model,string result)
+        public async Task SaveUploadModelAsync(UploadModel model, string result)
         {
             using (var connection = GetMySqlConnection())
             {

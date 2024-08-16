@@ -1,13 +1,12 @@
-﻿using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
-using MesDataCollection.Repository;
-using System.Data;
+﻿using MesDataCollection.Repository;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Data;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MesDataCollection.Job
 {
@@ -20,11 +19,6 @@ namespace MesDataCollection.Job
             _logger = logger;
         }
 
-        /// <summary>
-        /// JOB 1
-        /// </summary>
-        /// <param name="stoppingToken"></param>
-        /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
