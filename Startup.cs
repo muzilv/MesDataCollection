@@ -28,6 +28,7 @@ namespace MesDataCollection
         {
             services.AddControllers();
             services.AddScoped<DataRepository>();
+            services.AddScoped<UserRepository>();
             services.AddHostedService<JobService>();
 
             services.AddCors(options => options.AddPolicy("CorsPolicy",

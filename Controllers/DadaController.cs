@@ -94,7 +94,6 @@ namespace MesDataCollection.Controllers
             }
         }
 
-
         [HttpGet]
         [Route("api/[controller]/[action]")]
         public async Task<IActionResult> GetMesSumData()
@@ -151,7 +150,6 @@ namespace MesDataCollection.Controllers
                 return StatusCode(500, "An error occurred while saving data.");
             }
         }
-
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
@@ -214,7 +212,6 @@ namespace MesDataCollection.Controllers
             }
         }
 
-
         [HttpGet]
         [Route("api/[controller]/[action]")]
         public async Task<IActionResult> GetMesPlanDefault()
@@ -238,7 +235,6 @@ namespace MesDataCollection.Controllers
                 return StatusCode(500, "An error occurred while saving data.");
             }
         }
-
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
@@ -264,10 +260,6 @@ namespace MesDataCollection.Controllers
             }
         }
 
-
-
-
-
         private static string[] ConvertEntityFieldsToStringArray(object obj)
         {
             Type type = obj.GetType();
@@ -281,10 +273,6 @@ namespace MesDataCollection.Controllers
 
             return stringArray;
         }
-
-
-
-
 
         public static void LogMessage(string level, string message)
         {
