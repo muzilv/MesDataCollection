@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
+using Newtonsoft.Json;
 using System.Net.NetworkInformation;
 
 namespace MesDataCollection
@@ -15,18 +16,25 @@ namespace MesDataCollection
     {
         public Startup(IConfiguration configuration)
         {
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-               .SetBasePath(Directory.GetCurrentDirectory())
-               .AddJsonFile("appsettings.json");
+            try
+            {
+                IConfigurationBuilder builder = new ConfigurationBuilder()
+                   .SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("appsettings.json");
 
-            Configuration = builder.Build();
+                Configuration = builder.Build();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"‘À––“Ï≥££∫{ex.Message},{ex.ToString()}");
+            }
         }
 
         public IConfiguration Configuration { get; }
         
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson();
             services.AddScoped<DataRepository>();
             services.AddScoped<UserRepository>();
             services.AddHostedService<JobService>();

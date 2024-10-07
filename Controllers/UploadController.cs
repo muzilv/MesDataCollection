@@ -23,15 +23,11 @@ namespace MesDataCollection.Controllers
         {
             _databaseService = databaseService;
             _logger = logger;
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-               .SetBasePath(Directory.GetCurrentDirectory())
-               .AddJsonFile("appsettings.json");
-
-            Configuration = builder.Build();
         }
 
         /// <summary>
         /// 数据接入API
+        /// 设备流程名  ProcessName  1.点胶机(胶路不良、键帽不良、塑胶不良)-2.按键贴合(新增冷冻不良)-3.成品检测(ccd不良)
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -42,10 +38,11 @@ namespace MesDataCollection.Controllers
             try
             {
                 LogMessage("INFO", $"接收数据：{JsonConvert.SerializeObject(model)}");
-                if (model == null)
+                if (model == null|| model.TestResult == null || model.TestResult.Count == 0)
                 {
                     return BadRequest("No data provided.");
                 }
+
                 if (!await _databaseService.TableExistsAsync())
                 {
                     await _databaseService.CreateTableAsync();
@@ -54,7 +51,13 @@ namespace MesDataCollection.Controllers
                 {
                     foreach (var result in model.TestResult)
                     {
-                        await _databaseService.SaveUploadModelAsync(model, result);
+                        if (result != null && result.ToUpper() == "PASS")
+                        {
+                            await _databaseService.SaveUploadModelAsync(model, "成品产出");
+                        }
+                        else {
+                            await _databaseService.SaveUploadModelAsync(model, result);
+                        }
                     }
                 }
                 return Ok("saved successfully.");
