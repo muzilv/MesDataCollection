@@ -1,8 +1,11 @@
-﻿using MesDataCollection.Repository;
+﻿using MesDataCollection.Model;
+using MesDataCollection.Repository;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Spectre.Console;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading;
@@ -67,75 +70,159 @@ namespace MesDataCollection.Job
                 {
                     await _databaseService.CreateSumData(now.Date);
                 };
-
                 var ResultQty = await _databaseService.GetTestResultQty(start, end);
                 if (ResultQty != null && ResultQty.Count > 0)
                 {
-                    foreach (var item in ResultQty)
-                    {
-                        if (item.TestResult == "Pass")
-                        {
-                            item.TestResult = "成品产出";
-                        }
-                        await _databaseService.UpdateQty(item, now.Date);
-                    }
-                    var hourList = ResultQty.Select(x => x.hour).Distinct().ToArray();
-                    if (hourList.Length > 0)
-                    {
-                        foreach (var hour in hourList)
-                        {
-                            var sumQty = ResultQty.Where(x => x.hour == hour).Sum(x => x.qty);
-                            await _databaseService.UpdateQtys(sumQty.ToString(), hour, "投入数", now.Date);
+                    await sumPass(now, ResultQty);
 
-                            var jmblQty = ResultQty.Where(x => x.hour == hour).FirstOrDefault(x => x.TestResult == "键帽不良")?.qty;
-                            var jlblQty = ResultQty.Where(x => x.hour == hour).FirstOrDefault(x => x.TestResult == "胶路不良")?.qty;
-                            var sjjblQty = ResultQty.Where(x => x.hour == hour).FirstOrDefault(x => x.TestResult == "塑胶件不良")?.qty;
+                    await SumHourDefectiveFraction(now, ResultQty);
 
-                            var sumhourQty = Convert.ToDecimal(sumQty);
-
-                            var jmbulQty = Convert.ToDouble((jmblQty / sumhourQty) * 100).ToString("F2") + "%";
-                            var jlbllQty = Convert.ToDouble((jlblQty / sumhourQty) * 100).ToString("F2") + "%";
-                            var sjjbllQty = Convert.ToDouble((sjjblQty / sumhourQty) * 100).ToString("F2") + "%";
-
-                            await _databaseService.UpdateQtys(jmbulQty, hour, "键帽不良率%", now.Date);
-                            await _databaseService.UpdateQtys(jlbllQty, hour, "胶路不良率%", now.Date);
-                            await _databaseService.UpdateQtys(sjjbllQty, hour, "塑胶件不良率%", now.Date);
-                        }
-
-                        {
-                            var sumQty = ResultQty.Sum(x => x.qty);
-                            await _databaseService.UpdateQtys(sumQty.ToString(), "投入数", now.Date);
-
-                            var jmblQty = ResultQty.Where(x => x.TestResult == "键帽不良")?.Sum(x => x.qty);
-                            var jlblQty = ResultQty.Where(x => x.TestResult == "胶路不良")?.Sum(x => x.qty);
-                            var sjjblQty = ResultQty.Where(x => x.TestResult == "塑胶件不良")?.Sum(x => x.qty);
-                            var passQty = ResultQty.Where(x => x.TestResult == "成品产出")?.Sum(x => x.qty);
-                            var ccblQty = ResultQty.Where(x => x.TestResult == "CC不良")?.Sum(x => x.qty);
-
-                            await _databaseService.UpdateQtys(jmblQty.ToString(), "键帽不良", now.Date);
-                            await _databaseService.UpdateQtys(jlblQty.ToString(), "胶路不良", now.Date);
-                            await _databaseService.UpdateQtys(sjjblQty.ToString(), "塑胶件不良", now.Date);
-                            await _databaseService.UpdateQtys(passQty.ToString(), "成品产出", now.Date);
-                            await _databaseService.UpdateQtys(ccblQty.ToString(), "CC不良", now.Date);
-
-
-                            var sumhourQty = Convert.ToDecimal(sumQty);
-
-                            var jmbulQty = Convert.ToDouble((jmblQty / sumhourQty) * 100).ToString("F2")+"%";
-                            var jlbllQty = Convert.ToDouble((jlblQty / sumhourQty) * 100).ToString("F2") + "%";
-                            var sjjbllQty = Convert.ToDouble((sjjblQty / sumhourQty) * 100).ToString("F2") + "%";
-
-                            await _databaseService.UpdateQtys(jmbulQty, "键帽不良率%", now.Date);
-                            await _databaseService.UpdateQtys(jlbllQty, "胶路不良率%", now.Date);
-                            await _databaseService.UpdateQtys(sjjbllQty, "塑胶件不良率%", now.Date);
-                        }
-                    }
+                    await sunHourQty(now, ResultQty);
+                    await sunHourRate(now, ResultQty);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogInformation($"任务异常：{ex.Message}");
             }
+        }
+
+
+        /// <summary>
+        /// 更新每小时成品产出
+        /// </summary>
+        /// <param name="now"></param>
+        /// <param name="ResultQty"></param>
+        /// <returns></returns>
+        private async Task sumPass(DateTime now, List<UploadStatus> ResultQty)
+        {
+            foreach (var item in ResultQty)
+            {
+                if (item.TestResult == "Pass")
+                {
+                    item.TestResult = "成品产出";
+                }
+                await _databaseService.UpdateQty(item, now.Date);
+            }
+        }
+
+
+        /// <summary>
+        /// 更新每小时不良率
+        /// </summary>
+        /// <param name="now"></param>
+        /// <param name="ResultQty"></param>
+        /// <returns></returns>
+        private async Task SumHourDefectiveFraction(DateTime now, List<UploadStatus> ResultQty)
+        {
+            var testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "成品产出", "CC不良", "冷冻不良" };
+            var hourList = ResultQty.Select(x => x.hour).Distinct().ToArray();
+            if (hourList.Length > 0)
+            {
+                foreach (var hour in hourList)
+                {
+                    var sumQty = ResultQty.Where(x => x.hour == hour).Sum(x => x.qty);
+                    await _databaseService.UpdateQtys(sumQty.ToString(), hour, "投入数", now.Date);
+
+                    var resultMap = new Dictionary<string, long?>();
+
+                    foreach (var testResult in testResultsToUpdate)
+                    {
+                        var qty = ResultQty.Where(x => x.TestResult == testResult)?.Sum(x => x.qty);
+                        resultMap[testResult] = qty;
+                    }
+
+                    foreach (var entry in resultMap)
+                    {
+                        var qty = entry.Value;
+                        await _databaseService.UpdateQtys(qty.ToString(), hour, $"{entry.Key}", now.Date);
+                    }
+                    foreach (var entry in resultMap)
+                    {
+                        var qty = entry.Value;
+                        var percentage = qty.HasValue ? Convert.ToDouble((qty.Value / Convert.ToDecimal(sumQty)) * 100).ToString("F2") + "%" : "0%";
+                        await _databaseService.UpdateQtys(percentage, hour, $"{entry.Key}不良率%", now.Date);
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+
+        /// <summary>
+        /// 统计天维度数量
+        /// </summary>
+        /// <param name="now"></param>
+        /// <param name="ResultQty"></param>
+        /// <returns></returns>
+        private async Task sunHourQty(DateTime now, List<UploadStatus> ResultQty)
+        {
+            var sumQty = ResultQty.Sum(x => x.qty);
+            await _databaseService.UpdateQtys(sumQty.ToString(), "投入数", now.Date);
+
+            var testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "成品产出", "CC不良", "冷冻不良"};
+
+            var resultMap = new Dictionary<string, long?>();
+
+            foreach (var testResult in testResultsToUpdate)
+            {
+                var qty = ResultQty.Where(x => x.TestResult == testResult)?.Sum(x => x.qty);
+                resultMap[testResult] = qty;
+            }
+
+            // 并行更新数据库
+            await Task.WhenAll(
+                testResultsToUpdate.Select(async testResult =>
+                {
+                    if (resultMap.TryGetValue(testResult, out long? qty) && qty.HasValue)
+                    {
+                        await _databaseService.UpdateQtys(qty.Value.ToString(), testResult, now.Date);
+                    }
+                })
+            );
+        }
+
+        /// <summary>
+        /// 统计天维度不良率
+        /// </summary>
+        /// <param name="now"></param>
+        /// <param name="ResultQty"></param>
+        /// <returns></returns>
+        private async Task sunHourRate(DateTime now, List<UploadStatus> ResultQty)
+        {
+            // 定义常量集合
+            var testResultsToUpdate = new Dictionary<string, string>
+            {
+               { "键帽不良", "键帽不良率%" },
+               { "胶路不良", "胶路不良率%" },
+               { "塑胶件不良", "塑胶件不良率%" },
+               { "冷冻不良", "冷冻不良率%" }
+            };
+
+            // 计算总数
+            var sumhourQty = Convert.ToDecimal(ResultQty.Sum(x => x.qty));
+
+            // 构建字典并计算百分比
+            var resultMap = new Dictionary<string, string>();
+
+            foreach (var entry in testResultsToUpdate)
+            {
+                var qty = ResultQty.Where(x => x.TestResult == entry.Key)?.Sum(x => x.qty);
+                var percentage = qty.HasValue ? Convert.ToDouble((qty.Value / sumhourQty) * 100).ToString("F2") + "%" : "0%";
+                resultMap[entry.Value] = percentage;
+            }
+
+            // 并行更新数据库
+            await Task.WhenAll(
+                resultMap.Select(async pair =>
+                {
+                    await _databaseService.UpdateQtys(pair.Value, pair.Key, now.Date);
+                })
+            );
         }
     }
 }
