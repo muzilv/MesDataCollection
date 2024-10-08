@@ -55,13 +55,13 @@ namespace MesDataCollection.Repository
             }
         }
 
-        public async Task<List<UploadStatus>> GetTestResultQty(DateTime start_time, DateTime end_time)
+        public async Task<List<UploadStatus>> GetProductQty(DateTime start_time, DateTime end_time)
         {
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<UploadStatus>(
                       "SELECT TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
-                      "FROM mes_uploaddata where TestTime>@start_time and TestTime<@end_time " +
+                      "FROM mes_uploaddata where ProcessName='成品检测' and TestTime>@start_time and TestTime<@end_time " +
                       "GROUP BY hour,TestResult " +
                       "ORDER BY hour;",
                       new
@@ -72,6 +72,25 @@ namespace MesDataCollection.Repository
                 return result.ToList();
             }
         }
+
+        public async Task<List<UploadStatus>> GetTestResultQty(DateTime start_time, DateTime end_time)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                var result = await connection.QueryAsync<UploadStatus>(
+                      "SELECT TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
+                      "FROM mes_uploaddata where   TestTime>@start_time and TestTime<@end_time " +
+                      "GROUP BY hour,TestResult " +
+                      "ORDER BY hour;",
+                      new
+                      {
+                          start_time = start_time,
+                          end_time = end_time
+                      });
+                return result.ToList();
+            }
+        }
+      
 
         public async Task<List<UploadResult>> UploadResult(DateTime start_time, DateTime end_time)
         {

@@ -73,7 +73,7 @@ namespace MesDataCollection.Job
                 var ResultQty = await _databaseService.GetTestResultQty(start, end);
                 if (ResultQty != null && ResultQty.Count > 0)
                 {
-                    await sumPass(now, ResultQty);
+                    await sumPass();
 
                     await SumHourDefectiveFraction(now, ResultQty);
 
@@ -88,21 +88,41 @@ namespace MesDataCollection.Job
         }
 
 
+        //ProcessName=点胶机/按键贴合/成品检测(固定值)
+        //投入数=成品总数+键帽不良数+胶路不良数
+        //成品产出=成品检测上传得良品数
+        //不良数/不良率=投入数-成品产出/(投入数-成品产出)/投入数100
+        //24小时不良率统计就计算每种不良数量/每个流程上传的总数
+
         /// <summary>
-        /// 更新每小时成品产出
+        /// 更新每小时各流程数量
         /// </summary>
         /// <param name="now"></param>
         /// <param name="ResultQty"></param>
         /// <returns></returns>
-        private async Task sumPass(DateTime now, List<UploadStatus> ResultQty)
+        private async Task sumPass()
         {
-            foreach (var item in ResultQty)
+            DateTime now = DateTime.Now;
+            DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
+            DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
+
+            var ResultQty = await _databaseService.GetTestResultQty(start, end);
+            if (ResultQty != null && ResultQty.Count > 0)
             {
-                if (item.TestResult == "Pass")
+                ResultQty.RemoveAll(x => x.TestResult == "成品产出" || x.TestResult.ToUpper() == "CCD不良");
+                foreach (var item in ResultQty)
                 {
-                    item.TestResult = "成品产出";
+                    await _databaseService.UpdateQty(item, now.Date);
                 }
-                await _databaseService.UpdateQty(item, now.Date);
+            }
+
+            ResultQty = await _databaseService.GetProductQty(start, end);
+            if (ResultQty != null && ResultQty.Count > 0)
+            {
+                foreach (var item in ResultQty)
+                {
+                    await _databaseService.UpdateQty(item, now.Date);
+                }
             }
         }
 
@@ -146,12 +166,6 @@ namespace MesDataCollection.Job
                 }
             }
         }
-
-
-
-
-
-
 
         /// <summary>
         /// 统计天维度数量
