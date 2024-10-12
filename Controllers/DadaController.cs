@@ -97,12 +97,17 @@ namespace MesDataCollection.Controllers
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
-        public async Task<IActionResult> GetMesSumData()
+        public async Task<IActionResult> GetMesSumData(string LineName)
         {
             try
             {
+                if (string.IsNullOrEmpty(LineName)|| LineName=="全部"||LineName== "undefined")
+                {
+                    LineName = "Total";
+                }
+
                 List<string[]> strings = new List<string[]>();
-                var data = await _databaseService.GetMesSumData();
+                var data = await _databaseService.GetMesSumData(LineName);
                 string json = JsonConvert.SerializeObject(data);
                 foreach (var item in data)
                 {
@@ -269,11 +274,18 @@ namespace MesDataCollection.Controllers
         {
             try
             {
+                List<boxmodel> list = new List<boxmodel>();
+                list.Add(new boxmodel{ value = "全部", label = "全部" });
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
                 var data = await _databaseService.GetLineModel(start, end);
-                return Ok(data);
+                if (data != null && data.Count > 0)
+                {
+                    list.AddRange(from item in data
+                                  select new boxmodel { label = item.LineName, value = item.LineName });
+                }
+                return Ok(list);
             }
             catch (Exception ex)
             {

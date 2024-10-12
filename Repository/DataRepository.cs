@@ -175,7 +175,7 @@ namespace MesDataCollection.Repository
                 if (string.IsNullOrEmpty(LineName))
                 {
                     await connection.ExecuteAsync(
-                        "update mes_sumdata set `" + hour + "`=@qty where projectname =@projectname  and data =@dt",
+                        "update mes_sumdata set `" + hour + "`=@qty where projectname =@projectname  and LineName='Total'  and data =@dt",
                         new
                         {
                             projectname = projectname,
@@ -207,7 +207,7 @@ namespace MesDataCollection.Repository
                 if (string.IsNullOrEmpty(LineName))
                 {
                     await connection.ExecuteAsync(
-                        "update mes_sumdata set `sum_qty`=@qty where projectname =@projectname  and data =@dt",
+                        "update mes_sumdata set `sum_qty`=@qty where projectname =@projectname and  LineName='Total' and data =@dt",
                         new
                         {
                             projectname = projectname,
@@ -361,22 +361,23 @@ namespace MesDataCollection.Repository
             using (var connection = GetMySqlConnection())
             {
                 await connection.ExecuteAsync(@"insert into mes_sumdata 
-( projectname, `data`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`,`12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`, sum_qty, sort) values
-('成品产出', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11),
-('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10),
-('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9),
-('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8),
-('塑胶不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7),
-('塑胶不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6),
-('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5),
-('胶路不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4),
-('键帽不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3),
-('键帽不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2),
-('投入数', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);",
-                    new
+( projectname, `data`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`,`12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`, sum_qty, sort,LineName) values
+('成品产出', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,@LineName),
+('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
+('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
+('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
+('塑胶件不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
+('塑胶件不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
+('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,@LineName),
+('胶路不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,@LineName),
+('键帽不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,@LineName),
+('键帽不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,@LineName),
+('投入数', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,@LineName);",
+                   new
                     {
-                        data = date.ToString("yyyy-MM-dd")
-                    });
+                        data = date.ToString("yyyy-MM-dd"),
+                       LineName = "Total"
+                   });
             }
         }
 
@@ -393,8 +394,8 @@ namespace MesDataCollection.Repository
 ('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
 ('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
 ('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
-('塑胶不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
-('塑胶不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
+('塑胶件不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
+('塑胶件不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
 ('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,@LineName),
 ('胶路不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,@LineName),
 ('键帽不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,@LineName),
@@ -415,15 +416,16 @@ namespace MesDataCollection.Repository
         }
 
 
-        public async Task<List<TimeData>> GetMesSumData()
+        public async Task<List<TimeData>> GetMesSumData(string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<TimeData>(
-                      "select  projectname 'Project',`8` as 'Time8',`9` 'Time9',`10` 'Time10',`11` 'Time11',`12` 'Time12',`13` 'Time13',`14` 'Time14',`15` 'Time15',`16` 'Time16',`17` 'Time17',`18` 'Time18',`19` 'Time19',`20` 'Time20',`21` 'Time21',`22` 'Time22',`23` 'Time23',`0` 'Time0',`1` 'Time1',`2` 'Time2',`3` 'Time3',`4` 'Time4',`5` 'Time5',`6` 'Time6',`7` 'Time7' from mes_sumdata where data=@dt order by sort asc",
+                      "select  projectname 'Project',`8` as 'Time8',`9` 'Time9',`10` 'Time10',`11` 'Time11',`12` 'Time12',`13` 'Time13',`14` 'Time14',`15` 'Time15',`16` 'Time16',`17` 'Time17',`18` 'Time18',`19` 'Time19',`20` 'Time20',`21` 'Time21',`22` 'Time22',`23` 'Time23',`0` 'Time0',`1` 'Time1',`2` 'Time2',`3` 'Time3',`4` 'Time4',`5` 'Time5',`6` 'Time6',`7` 'Time7' from mes_sumdata where  LineName=@LineName and  data=@dt order by sort asc",
                       new
                       {
-                          dt = DateTime.Now.ToString("yyyy-MM-dd")
+                          dt = DateTime.Now.ToString("yyyy-MM-dd"),
+                          LineName= LineName
                       });
                 return result.ToList();
             }

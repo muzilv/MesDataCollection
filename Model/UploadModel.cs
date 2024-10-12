@@ -253,4 +253,11 @@ namespace MesDataCollection.Model
     {
         public string LineName { get; set; } 
     }
+
+    public class boxmodel
+    {
+        public string value { get; set; }
+        public string label { get; set; }
+        
+    }
 }
