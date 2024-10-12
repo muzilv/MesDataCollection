@@ -370,7 +370,7 @@ namespace MesDataCollection.Repository
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<OutputStatistics>(
-                      "select sum(1) TotalQty,sum(CASE TestResult WHEN '成品产出' THEN 1 ELSE 0 END) PassQty from  mes_uploaddata where  TestTime>=@start_time and TestTime<=@end_time",
+                      "select sum(1) TotalQty,sum(CASE TestResult WHEN '成品产出' THEN 1 ELSE 0 END) PassQty from  mes_uploaddata where  ProcessName='成品检测' and  TestTime>=@start_time and TestTime<=@end_time",
                       new
                       {
                           start_time = start_time,

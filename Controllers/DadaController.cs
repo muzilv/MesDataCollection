@@ -21,6 +21,7 @@ namespace MesDataCollection.Controllers
         private readonly DataRepository _databaseService;
         private readonly ILogger<UploadController> _logger;
         public static IConfigurationRoot Configuration { get; set; }
+        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CC不良", "冷冻不良" };
 
         public DadaController(DataRepository databaseService, ILogger<UploadController> logger)
         {
@@ -130,18 +131,20 @@ namespace MesDataCollection.Controllers
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
-                var data = await _databaseService.UploadResult(start, end);
-
                 List<CapsuleChart> list = new List<CapsuleChart>();
-                foreach (var item in data)
+                var ProcessQtyList = await _databaseService.GetProcessQty(start, end);
+                if (ProcessQtyList != null && ProcessQtyList.Count() > 0)
                 {
-                    list.Add(new CapsuleChart
-                    {
-                        name = item.TestResult == "pass" ? "成品产出" : item.TestResult,
-                        value = item.qty
-                    });
-                }
 
+                    long finishedQty = ProcessQtyList.Where(x => x.ProcessName == "成品检测" && x.TestResult == "成品产出").Sum(x => x.qty);
+                    list.Add(new CapsuleChart { name = "成品产出", value = finishedQty });
+                    foreach (var testResult in testResultsToUpdate)
+                    {
+                        long defectsQty = ProcessQtyList.Where(x => x.TestResult == testResult).Sum(x => x.qty);
+                        list.Add(new CapsuleChart { name = testResult, value = defectsQty });
+                    }
+                }
+               
                 return Ok(list);
             }
             catch (Exception ex)
