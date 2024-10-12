@@ -56,6 +56,18 @@ namespace MesDataCollection.Model
 
     }
 
+    public class ProcessQty
+    {
+        public string ProcessName { get; set; }
+
+        public string TestResult { get; set; }
+
+        public long qty { get; set; }
+
+        public int hour { get; set; }
+
+    }
+
     public class UploadResult
     {
         public string TestResult { get; set; }

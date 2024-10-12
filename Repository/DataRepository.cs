@@ -45,7 +45,7 @@ namespace MesDataCollection.Repository
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<UploadQty>(
-                      "select  count(1) qty from Mes_UploadData where TestTime>=@start_time and TestTime<=@end_time",
+                      "select  count(1) qty from Mes_UploadData where  ProcessName='成品检测' and  TestTime>=@start_time and TestTime<=@end_time",
                       new
                       {
                           start_time= start_time,
@@ -54,6 +54,25 @@ namespace MesDataCollection.Repository
                 return result.FirstOrDefault();
             }
         }
+
+        public async Task<List<ProcessQty>> GetProcessQty(DateTime start_time, DateTime end_time)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                var result = await connection.QueryAsync<ProcessQty>(
+                      "SELECT ProcessName,TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
+                      "FROM mes_uploaddata where   TestTime>=@start_time and TestTime<=@end_time " +
+                      "GROUP BY hour,ProcessName,TestResult " +
+                      "ORDER BY hour;",
+                      new
+                      {
+                          start_time = start_time,
+                          end_time = end_time
+                      });
+                return result.ToList();
+            }
+        }
+
 
         public async Task<List<UploadStatus>> GetProductQty(DateTime start_time, DateTime end_time)
         {
@@ -72,6 +91,9 @@ namespace MesDataCollection.Repository
                 return result.ToList();
             }
         }
+
+
+
 
         public async Task<List<UploadStatus>> GetTestResultQty(DateTime start_time, DateTime end_time)
         {
@@ -140,6 +162,7 @@ namespace MesDataCollection.Repository
             }
         }
 
+
         public async Task UpdateQtys(string qty, string projectname, DateTime dt)
         {
             using (var connection = GetMySqlConnection())
@@ -176,15 +199,16 @@ namespace MesDataCollection.Repository
             }
         }
 
-        public async Task<List<ProductionPlan>> GetMesPlan(DateTime dt)
+        public async Task<List<ProductionPlan>> GetMesPlan()
         {
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<ProductionPlan>(
-                      "select* from  mes_plan where is_delete=0 and start_time<@dt and end_time>@dt",
+                      "select* from  mes_plan where is_delete=0 and start_time>=@start_time and end_time<=@end_time",
                       new
                       {
-                          dt = dt.ToString("yyyy-MM-dd HH:mm:ss")
+                          start_time = DateTime.Now.AddDays(-3).ToString("yyyy-MM-dd HH:mm:ss"),
+                          end_time = DateTime.Now.AddDays(3).ToString("yyyy-MM-dd HH:mm:ss")
                       });
                 return result.ToList();
             }
