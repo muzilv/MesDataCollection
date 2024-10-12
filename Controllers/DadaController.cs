@@ -132,7 +132,7 @@ namespace MesDataCollection.Controllers
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
                 List<CapsuleChart> list = new List<CapsuleChart>();
-                var ProcessQtyList = await _databaseService.GetProcessQty(start, end);
+                var ProcessQtyList = await _databaseService.GetProcessQty(start, end,"");
                 if (ProcessQtyList != null && ProcessQtyList.Count() > 0)
                 {
 
@@ -262,6 +262,26 @@ namespace MesDataCollection.Controllers
                 return StatusCode(500, "An error occurred while saving data.");
             }
         }
+
+        [HttpGet]
+        [Route("api/[controller]/[action]")]
+        public async Task<IActionResult> GetLine()
+        {
+            try
+            {
+                DateTime now = DateTime.Now;
+                DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
+                DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
+                var data = await _databaseService.GetLineModel(start, end);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                LogMessage("ERRO", ex.Message);
+                return StatusCode(500, "An error occurred while saving data.");
+            }
+        }
+
 
         private static string[] ConvertEntityFieldsToStringArray(object obj)
         {

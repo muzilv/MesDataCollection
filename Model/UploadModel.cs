@@ -247,4 +247,10 @@ namespace MesDataCollection.Model
         public long plan_quantity { get; set; }
         public long ActualQty { get; set; }
     }
+
+
+    public class LineModel
+    {
+        public string LineName { get; set; } 
+    }
 }

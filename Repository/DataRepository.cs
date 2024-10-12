@@ -54,22 +54,43 @@ namespace MesDataCollection.Repository
                 return result.FirstOrDefault();
             }
         }
+        
 
-        public async Task<List<ProcessQty>> GetProcessQty(DateTime start_time, DateTime end_time)
+        public async Task<List<ProcessQty>> GetProcessQty(DateTime start_time, DateTime end_time,string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
-                var result = await connection.QueryAsync<ProcessQty>(
+                if (string.IsNullOrEmpty(LineName))
+                {
+                    var result = await connection.QueryAsync<ProcessQty>(
                       "SELECT ProcessName,TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
-                      "FROM mes_uploaddata where   TestTime>=@start_time and TestTime<=@end_time " +
+                      "FROM mes_uploaddata where  TestTime>=@start_time and TestTime<=@end_time " +
                       "GROUP BY hour,ProcessName,TestResult " +
                       "ORDER BY hour;",
                       new
                       {
                           start_time = start_time,
-                          end_time = end_time
+                          end_time = end_time,
+                          LineName = LineName
                       });
-                return result.ToList();
+                    return result.ToList();
+
+                }
+                else
+                {
+                    var result = await connection.QueryAsync<ProcessQty>(
+                          "SELECT ProcessName,TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
+                          "FROM mes_uploaddata where LineName=@LineName  and TestTime>=@start_time and TestTime<=@end_time " +
+                          "GROUP BY hour,ProcessName,TestResult " +
+                          "ORDER BY hour;",
+                          new
+                          {
+                              start_time = start_time,
+                              end_time = end_time,
+                              LineName = LineName
+                          });
+                    return result.ToList();
+                }
             }
         }
 
@@ -147,34 +168,63 @@ namespace MesDataCollection.Repository
         }
 
 
-        public async Task UpdateQtys(string  qty,int hour,string projectname, DateTime dt)
+        public async Task UpdateQtys(string  qty,int hour,string projectname, DateTime dt,string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
-                await connection.ExecuteAsync(
-                    "update mes_sumdata set `" + hour + "`=@qty where projectname =@projectname  and data =@dt",
-                    new
-                    {
-                        projectname = projectname,
-                        dt = dt.ToString("yyyy-MM-dd"),
-                        qty = qty,
-                    });
+                if (string.IsNullOrEmpty(LineName))
+                {
+                    await connection.ExecuteAsync(
+                        "update mes_sumdata set `" + hour + "`=@qty where projectname =@projectname  and data =@dt",
+                        new
+                        {
+                            projectname = projectname,
+                            dt = dt.ToString("yyyy-MM-dd"),
+                            qty = qty,
+                        });
+                }
+                else
+                {
+                    await connection.ExecuteAsync(
+                            "update mes_sumdata set `" + hour + "`=@qty where projectname =@projectname and LineName=@LineName and data =@dt",
+                            new
+                            {
+                                projectname = projectname,
+                                dt = dt.ToString("yyyy-MM-dd"),
+                                qty = qty,
+                                LineName = LineName
+                            });
+
+                }
             }
         }
 
 
-        public async Task UpdateQtys(string qty, string projectname, DateTime dt)
+        public async Task UpdateQtys(string qty, string projectname, DateTime dt, string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
-                await connection.ExecuteAsync(
-                    "update mes_sumdata set `sum_qty`=@qty where projectname =@projectname  and data =@dt",
-                    new
-                    {
-                        projectname = projectname,
-                        dt = dt.ToString("yyyy-MM-dd"),
-                        qty = qty,
-                    });
+                if (string.IsNullOrEmpty(LineName))
+                {
+                    await connection.ExecuteAsync(
+                        "update mes_sumdata set `sum_qty`=@qty where projectname =@projectname  and data =@dt",
+                        new
+                        {
+                            projectname = projectname,
+                            dt = dt.ToString("yyyy-MM-dd"),
+                            qty = qty,
+                        });
+                }else{
+                    await connection.ExecuteAsync(
+                            "update mes_sumdata set `sum_qty`=@qty where projectname =@projectname  and LineName=@LineName and data =@dt",
+                            new
+                            {
+                                projectname = projectname,
+                                dt = dt.ToString("yyyy-MM-dd"),
+                                qty = qty,
+                                LineName= LineName
+                            });
+                }
             }
         }
 
@@ -295,6 +345,16 @@ namespace MesDataCollection.Repository
                 return result.FirstOrDefault() > 0;
             }
         }
+        public async Task<bool> GetSumData(DateTime date,string LineName)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                var result = await connection.QueryAsync<int>("SELECT COUNT(*) FROM mes_sumdata WHERE LineName=@LineName and data =@date", new { LineName= LineName, date = date.ToString("yyyy-MM-dd") });
+                return result.FirstOrDefault() > 0;
+            }
+        }
+
+
 
         public async Task CreateSumData(DateTime date)
         {
@@ -317,6 +377,40 @@ namespace MesDataCollection.Repository
                     {
                         data = date.ToString("yyyy-MM-dd")
                     });
+            }
+        }
+
+
+        public async Task CreateSumData(DateTime date, string LineName)
+        {
+            try
+            {
+                using (var connection = GetMySqlConnection())
+                {
+                    await connection.ExecuteAsync(@"insert into mes_sumdata 
+( projectname, `data`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`,`12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`, sum_qty, sort,LineName) values
+('成品产出', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,@LineName),
+('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
+('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
+('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
+('塑胶不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
+('塑胶不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
+('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,@LineName),
+('胶路不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4,@LineName),
+('键帽不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3,@LineName),
+('键帽不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,@LineName),
+('投入数', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,@LineName);",
+                        new
+                        {
+                            data = date.ToString("yyyy-MM-dd"),
+                            LineName = LineName
+                        });
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
             }
         }
 
@@ -392,6 +486,21 @@ namespace MesDataCollection.Repository
                           end_time= end
                       });
                 return result.FirstOrDefault();
+            }
+        }
+
+        public async Task<List<LineModel>> GetLineModel(DateTime start, DateTime end)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                var result = await connection.QueryAsync<LineModel>(
+                      "select distinct LineName from  mes_uploaddata where  testtime>=@start_time and testtime<=@end_time ",
+                      new
+                      {
+                          start_time = start,
+                          end_time = end
+                      });
+                return result.ToList();
             }
         }
 

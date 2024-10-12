@@ -68,8 +68,8 @@ namespace MesDataCollection.Job
                 {
                     await _databaseService.CreateSumData(now.Date);
                 };
-
                 await SumHourDefectiveFraction();
+                await SumLineHourDefectiveFraction();
             }
             catch (Exception ex)
             {
@@ -77,6 +77,27 @@ namespace MesDataCollection.Job
             }
         }
 
+
+        private async Task<bool> SumLineHourDefectiveFraction()
+        {
+            DateTime now = DateTime.Now;
+            DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
+            DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
+            var data = await _databaseService.GetLineModel(start, end);
+            if (data != null && data.Count > 0)
+            {
+                foreach (var item in data)
+                {
+                    if (!await _databaseService.GetSumData(now.Date, item.LineName))
+                    {
+                        await _databaseService.CreateSumData(now.Date, item.LineName);
+                    };
+
+                    await SumHourDefectiveFraction(item.LineName);
+                }
+            }
+            return true;
+        }
 
         //ProcessName=点胶机/按键贴合/成品检测(固定值)
         //投入数=成品总数+键帽不良数+胶路不良数
@@ -90,13 +111,13 @@ namespace MesDataCollection.Job
         /// <param name="now"></param>
         /// <param name="ResultQty"></param>
         /// <returns></returns>
-        private async Task SumHourDefectiveFraction()
+        private async Task SumHourDefectiveFraction(string LineName="")
         {
             DateTime now = DateTime.Now;
             DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
             DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
 
-            var ProcessQtyList = await _databaseService.GetProcessQty(start, end);
+            var ProcessQtyList = await _databaseService.GetProcessQty(start, end, LineName);
             if (ProcessQtyList != null && ProcessQtyList.Count() > 0)
             {
                 var hourList = ProcessQtyList.Select(x => x.hour).Distinct().ToArray();
@@ -104,16 +125,16 @@ namespace MesDataCollection.Job
                 {
                     long finishedQty = ProcessQtyList.Where(x => x.hour == hour&&x.ProcessName== "成品检测"&&x.TestResult== "成品产出").Sum(x => x.qty);
                     long inputQty = ProcessQtyList.Where(x => x.hour == hour && x.TestResult == "键帽不良" || x.TestResult == "胶路不良").Sum(x => x.qty)+ finishedQty;
-                    await _databaseService.UpdateQtys(inputQty.ToString(), hour, "投入数", now.Date);
-                    await _databaseService.UpdateQtys(finishedQty.ToString(), hour, "成品产出", now.Date);
+                    await _databaseService.UpdateQtys(inputQty.ToString(), hour, "投入数", now.Date, LineName);
+                    await _databaseService.UpdateQtys(finishedQty.ToString(), hour, "成品产出", now.Date, LineName);
 
                     foreach (var testResult in testResultsToUpdate)
                     {
                         long defectsQty = ProcessQtyList.Where(x => x.TestResult == testResult).Sum(x => x.qty);
-                        await _databaseService.UpdateQtys(defectsQty.ToString(), hour, testResult, now.Date);
+                        await _databaseService.UpdateQtys(defectsQty.ToString(), hour, testResult, now.Date, LineName);
 
                         var percentage =Convert.ToDouble((defectsQty / Convert.ToDecimal(inputQty)) * 100).ToString("F2") + "%";
-                        await _databaseService.UpdateQtys(percentage, hour, $"{testResult}率%", now.Date);
+                        await _databaseService.UpdateQtys(percentage, hour, $"{testResult}率%", now.Date, LineName);
                     }
                 }
 
@@ -121,19 +142,23 @@ namespace MesDataCollection.Job
                 {
                     long finishedQty = ProcessQtyList.Where(x => x.ProcessName == "成品检测" && x.TestResult == "成品产出").Sum(x => x.qty);
                     long inputQty = ProcessQtyList.Where(x =>  x.TestResult == "键帽不良" || x.TestResult == "胶路不良").Sum(x => x.qty) + finishedQty;
-                    await _databaseService.UpdateQtys(inputQty.ToString(), "投入数", now.Date);
-                    await _databaseService.UpdateQtys(finishedQty.ToString(), "成品产出", now.Date);
+                    await _databaseService.UpdateQtys(inputQty.ToString(), "投入数", now.Date, LineName);
+                    await _databaseService.UpdateQtys(finishedQty.ToString(), "成品产出", now.Date, LineName);
 
                     foreach (var testResult in testResultsToUpdate)
                     {
                         long defectsQty = ProcessQtyList.Where(x => x.TestResult == testResult).Sum(x => x.qty);
-                        await _databaseService.UpdateQtys(defectsQty.ToString(), testResult, now.Date);
+                        await _databaseService.UpdateQtys(defectsQty.ToString(), testResult, now.Date, LineName);
 
                         var percentage = Convert.ToDouble((defectsQty / Convert.ToDecimal(inputQty)) * 100).ToString("F2") + "%";
-                        await _databaseService.UpdateQtys(percentage, $"{testResult}率%", now.Date);
+                        await _databaseService.UpdateQtys(percentage, $"{testResult}率%", now.Date, LineName);
                     }
                 }
             }
         }
+
+
+        
+
     }
 }
