@@ -15,7 +15,7 @@ namespace MesDataCollection.Job
     {
         private readonly ILogger<JobService> _logger;
         DataRepository _databaseService=new DataRepository ();
-        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CC不良", "冷冻不良" };
+        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CCD不良", "冷冻不良" };
 
         string[] ProcessNameList = new[] { "点胶机", "按键贴合", "成品检测" };
         public JobService(ILogger<JobService> logger)

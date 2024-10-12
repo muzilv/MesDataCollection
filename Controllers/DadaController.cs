@@ -21,7 +21,7 @@ namespace MesDataCollection.Controllers
         private readonly DataRepository _databaseService;
         private readonly ILogger<UploadController> _logger;
         public static IConfigurationRoot Configuration { get; set; }
-        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CC不良", "冷冻不良" };
+        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CCD不良", "冷冻不良" };
 
         public DadaController(DataRepository databaseService, ILogger<UploadController> logger)
         {
