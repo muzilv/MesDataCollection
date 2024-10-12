@@ -231,11 +231,11 @@ namespace MesDataCollection.Controllers
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
 
                 var data = await _databaseService.GetMesPlanDefault(start, end);
-                if (data != null)
+                if (data == null|| data.Id==0)
                 {
-                    return Ok(data);
+                    data = new ProductionPlan { Plan_Name = "无", Plan_Quantity = "0" };
                 }
-                return Ok();
+                return Ok(data);
             }
             catch (Exception ex)
             {
