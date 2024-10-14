@@ -10,6 +10,9 @@ using Microsoft.Extensions.Logging;
 using System.Net.NetworkInformation;
 using System.Collections.Generic;
 using Mysqlx.Crud;
+using Org.BouncyCastle.Asn1.X509;
+using Microsoft.AspNetCore.SignalR;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace MesDataCollection.Repository
 {
@@ -60,7 +63,7 @@ namespace MesDataCollection.Repository
         {
             using (var connection = GetMySqlConnection())
             {
-                if (string.IsNullOrEmpty(LineName))
+                if (LineName=="Total")
                 {
                     var result = await connection.QueryAsync<ProcessQty>(
                       "SELECT ProcessName,TestResult, DATE_FORMAT(TestTime, '%H') AS hour, COUNT(*) AS qty " +
@@ -363,9 +366,9 @@ namespace MesDataCollection.Repository
                 await connection.ExecuteAsync(@"insert into mes_sumdata 
 ( projectname, `data`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`,`12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`, sum_qty, sort,LineName) values
 ('成品产出', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,@LineName),
-('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
-('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
-('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
+('CCD不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
+('冷冻不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
+('冷冻不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
 ('塑胶件不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
 ('塑胶件不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
 ('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,@LineName),
@@ -391,9 +394,9 @@ namespace MesDataCollection.Repository
                     await connection.ExecuteAsync(@"insert into mes_sumdata 
 ( projectname, `data`, `0`, `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`,`12`, `13`, `14`, `15`, `16`, `17`, `18`, `19`, `20`, `21`, `22`, `23`, sum_qty, sort,LineName) values
 ('成品产出', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,@LineName),
-('CCD不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
-('冷冻不良率%', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
-('冷冻不良', @data, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
+('CCD不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10,@LineName),
+('冷冻不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,@LineName),
+('冷冻不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,@LineName),
 ('塑胶件不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7,@LineName),
 ('塑胶件不良', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6,@LineName),
 ('胶路不良率%', @data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,@LineName),
@@ -461,27 +464,60 @@ namespace MesDataCollection.Repository
             }
         }
 
-        public async Task<OutputStatistics> GetOutputStatistics(DateTime start_time, DateTime end_time)
+        public async Task<OutputStatistics> GetOutputStatistics(DateTime start_time, DateTime end_time ,string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
-                var result = await connection.QueryAsync<OutputStatistics>(
+                if (LineName == "Total")
+                {
+                    var result = await connection.QueryAsync<OutputStatistics>(
                       "select sum(1) TotalQty,sum(CASE TestResult WHEN '成品产出' THEN 1 ELSE 0 END) PassQty from  mes_uploaddata where  ProcessName='成品检测' and  TestTime>=@start_time and TestTime<=@end_time",
                       new
                       {
                           start_time = start_time,
                           end_time = end_time
                       });
-                return result.FirstOrDefault();
+                    return result.FirstOrDefault();
+
+
+                }
+                else
+                {
+                    var result = await connection.QueryAsync<OutputStatistics>(
+                          "select sum(1) TotalQty,sum(CASE TestResult WHEN '成品产出' THEN 1 ELSE 0 END) PassQty from  mes_uploaddata where  ProcessName='成品检测' and LineName=@LineName and  TestTime>=@start_time and TestTime<=@end_time",
+                          new
+                          {
+                              start_time = start_time,
+                              end_time = end_time,
+                              LineName = LineName
+                          });
+                    return result.FirstOrDefault();
+                }
             }
         }
+
+
+        public async Task<List<ProjectnameQty>> GetMesSumdata(string data ,string lineName)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                var result = await connection.QueryAsync<ProjectnameQty>("select projectname, data, sum_qty from mes_sumdata  where  `data`= @data and lineName = @lineName",
+                          new
+                          {
+                              data = data,
+                              lineName = lineName
+                          });
+                return result.ToList();
+            }
+        }
+
 
         public async Task<ProductionPlan> GetMesPlanDefault(DateTime start, DateTime end)
         {
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<ProductionPlan>(
-                      "select* from  mes_plan where is_delete=0 and start_time>=@start_time and end_time<=@end_time order by id desc limit 1",
+                      @"select* from  mes_plan where is_delete=0 and  NOW() between start_time and end_time order by start_time desc limit 1",
                       new
                       {
                           start_time = start,

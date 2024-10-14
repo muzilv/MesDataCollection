@@ -29,7 +29,7 @@ namespace MesDataCollection.Job
             {
                 await SumPlan();
                 await SumUploadData();
-                await Task.Delay(1000 * 60, stoppingToken);
+                await Task.Delay(1000 * 20, stoppingToken);
             }
         }
 
@@ -68,8 +68,17 @@ namespace MesDataCollection.Job
                 {
                     await _databaseService.CreateSumData(now.Date);
                 };
+                if (!await _databaseService.GetSumData(now.Date, "Line1"))
+                {
+                    await _databaseService.CreateSumData(now.Date, "Line1");
+                };
+                if (!await _databaseService.GetSumData(now.Date, "Line2"))
+                {
+                    await _databaseService.CreateSumData(now.Date, "Line2");
+                };
                 await SumHourDefectiveFraction();
-                await SumLineHourDefectiveFraction();
+                await SumHourDefectiveFraction("Line1");
+                await SumHourDefectiveFraction("Line2");
             }
             catch (Exception ex)
             {
@@ -78,26 +87,6 @@ namespace MesDataCollection.Job
         }
 
 
-        private async Task<bool> SumLineHourDefectiveFraction()
-        {
-            DateTime now = DateTime.Now;
-            DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
-            DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
-            var data = await _databaseService.GetLineModel(start, end);
-            if (data != null && data.Count > 0)
-            {
-                foreach (var item in data)
-                {
-                    if (!await _databaseService.GetSumData(now.Date, item.LineName))
-                    {
-                        await _databaseService.CreateSumData(now.Date, item.LineName);
-                    };
-
-                    await SumHourDefectiveFraction(item.LineName);
-                }
-            }
-            return true;
-        }
 
         //ProcessName=点胶机/按键贴合/成品检测(固定值)
         //投入数=成品总数+键帽不良数+胶路不良数

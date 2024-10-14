@@ -129,15 +129,20 @@ namespace MesDataCollection.Controllers
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
-        public async Task<IActionResult> GetUploadResult()
+        public async Task<IActionResult> GetUploadResult(string LineName)
         {
             try
             {
+                if (string.IsNullOrEmpty(LineName) || LineName == "全部" || LineName == "undefined")
+                {
+                    LineName = "Total";
+                }
+
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
                 List<CapsuleChart> list = new List<CapsuleChart>();
-                var ProcessQtyList = await _databaseService.GetProcessQty(start, end,"");
+                var ProcessQtyList = await _databaseService.GetProcessQty(start, end, LineName);
                 if (ProcessQtyList != null && ProcessQtyList.Count() > 0)
                 {
 
@@ -193,18 +198,25 @@ namespace MesDataCollection.Controllers
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
-        public async Task<IActionResult> GetOutputStatistics()
+        public async Task<IActionResult> GetOutputStatistics(string LineName)
         {
             try
             {
+                if (string.IsNullOrEmpty(LineName) || LineName == "全部" || LineName == "undefined")
+                {
+                    LineName = "Total";
+                }
+
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
-                var data = await _databaseService.GetOutputStatistics(start, end);
-                var plan = await _databaseService.GetMesPlanDefault(start, end);
-                if (data != null)
-                {
 
+                OutputStatistics data = new OutputStatistics();
+                var plan = await _databaseService.GetMesPlanDefault(start, end);
+                var list= await _databaseService.GetMesSumdata(now.Date.ToString("yyyy-MM-dd"), LineName);
+                if (list != null) {
+                    data.TotalQty =Convert.ToInt32( list.Where(x=>x.projectname=="投入数").FirstOrDefault().sum_qty);
+                    data.PassQty = Convert.ToInt32(list.Where(x => x.projectname == "成品产出").FirstOrDefault().sum_qty);
                     data.FialQty = data.TotalQty - data.PassQty;
                     data.ForecastQty = Convert.ToInt32((Convert.ToDecimal(data.PassQty) / now.Hour) * 24);
                     data.PlannedQty = Convert.ToInt32(plan?.Plan_Quantity ?? "0");
@@ -233,7 +245,7 @@ namespace MesDataCollection.Controllers
                 var data = await _databaseService.GetMesPlanDefault(start, end);
                 if (data == null|| data.Id==0)
                 {
-                    data = new ProductionPlan { Plan_Name = "无", Plan_Quantity = "0" };
+                    data = new ProductionPlan { Plan_Name = "格林按键自动化产线", Plan_Quantity = "" };
                 }
                 return Ok(data);
             }

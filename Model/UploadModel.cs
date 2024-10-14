@@ -205,6 +205,17 @@ namespace MesDataCollection.Model
 
     }
 
+    public class ProjectnameQty
+    {
+        public string projectname { get; set; }
+
+        public DateTime data { get; set; }
+
+        public string  sum_qty { get; set; }
+
+    }
+
+
     public class CapsuleChart
     {
         public string name { get; set; }
