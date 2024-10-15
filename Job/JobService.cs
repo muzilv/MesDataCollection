@@ -54,7 +54,7 @@ namespace MesDataCollection.Job
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"任务异常：{ex.Message}");
+                _logger.LogInformation($"SumPlan任务异常：{ex.Message}");
             }
         }
 
@@ -76,13 +76,13 @@ namespace MesDataCollection.Job
                 {
                     await _databaseService.CreateSumData(now.Date, "Line2");
                 };
-                await SumHourDefectiveFraction();
+                await SumHourDefectiveFraction("Total");
                 await SumHourDefectiveFraction("Line1");
                 await SumHourDefectiveFraction("Line2");
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"任务异常：{ex.Message}");
+                _logger.LogInformation($"SumUploadData 任务异常：{ex.Message}");
             }
         }
 
