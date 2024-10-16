@@ -439,7 +439,7 @@ namespace MesDataCollection.Repository
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<PlanQty>(
-                      "select  start_time,plan_name,plan_quantity,ActualQty from mes_plan where  start_time>=@start_time and start_time<=@end_time",
+                      "select  start_time,plan_name,plan_quantity,ActualQty from mes_plan order by start_time asc limit 15",
                       new
                       {
                           start_time = start_time,
@@ -450,15 +450,53 @@ namespace MesDataCollection.Repository
         }
 
 
-        public async Task<DayQty> GetDayQty()
+        public async Task<List<PlanQty>> GetActualQty(DateTime start_time, DateTime end_time ,string LineName)
+        {
+            using (var connection = GetMySqlConnection())
+            {
+                if (LineName == "Total")
+                {
+                    var result = await connection.QueryAsync<PlanQty>(
+                          "select DATE_FORMAT(TestTime, '%Y-%m-%d') start_time,count(TestResult) ActualQty from  mes_uploaddata where ProcessName ='成品检测' and TestResult = '成品产出' and TestTime>=@start_time and TestTime<=@end_time group by  DATE_FORMAT(TestTime, '%Y-%m-%d')",
+                          new
+                          {
+                              start_time = start_time,
+                              end_time = end_time
+                          });
+                    return result.ToList();
+                }
+                else
+                {
+                    var result = await connection.QueryAsync<PlanQty>(
+                         "select DATE_FORMAT(TestTime, '%Y-%m-%d') start_time,count(TestResult) ActualQty from  mes_uploaddata where ProcessName ='成品检测' and TestResult = '成品产出' and LineName=@LineName and TestTime>=@start_time and TestTime<=@end_time group by  DATE_FORMAT(TestTime, '%Y-%m-%d')",
+                         new
+                         {
+                             start_time = start_time,
+                             end_time = end_time,
+                             LineName= LineName
+                         });
+                    return result.ToList();
+
+
+                }
+            }
+        }
+        
+
+
+
+
+
+        public async Task<DayQty> GetDayQty(string LineName)
         {
             using (var connection = GetMySqlConnection())
             {
                 var result = await connection.QueryAsync<DayQty>(
-                      "select  `8` as 'Time8',`9` 'Time9',`10` 'Time10',`11` 'Time11',`12` 'Time12',`13` 'Time13',`14` 'Time14',`15` 'Time15',`16` 'Time16',`17` 'Time17',`18` 'Time18',`19` 'Time19',`20` 'Time20',`21` 'Time21',`22` 'Time22',`23` 'Time23',`0` 'Time0',`1` 'Time1',`2` 'Time2',`3` 'Time3',`4` 'Time4',`5` 'Time5',`6` 'Time6',`7` 'Time7' from mes_sumdata where projectname='成品产出' or projectname='Pass' and data=@dt limit 1",
+                      "select  `8` as 'Time8',`9` 'Time9',`10` 'Time10',`11` 'Time11',`12` 'Time12',`13` 'Time13',`14` 'Time14',`15` 'Time15',`16` 'Time16',`17` 'Time17',`18` 'Time18',`19` 'Time19',`20` 'Time20',`21` 'Time21',`22` 'Time22',`23` 'Time23',`0` 'Time0',`1` 'Time1',`2` 'Time2',`3` 'Time3',`4` 'Time4',`5` 'Time5',`6` 'Time6',`7` 'Time7' from mes_sumdata where projectname='成品产出' and LineName=@LineName and data=@dt  limit 1",
                       new
                       {
-                          dt = DateTime.Now.ToString("yyyy-MM-dd")
+                          dt = DateTime.Now.ToString("yyyy-MM-dd"),
+                          LineName= LineName
                       });
                 return result.FirstOrDefault();
             }

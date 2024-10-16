@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Spectre.Console;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MesDataCollection.Controllers
@@ -18,6 +19,10 @@ namespace MesDataCollection.Controllers
         private readonly DataRepository _databaseService;
         private readonly ILogger<UploadController> _logger;
         public static IConfigurationRoot Configuration { get; set; }
+
+        string[] testResultsToUpdate = new[] { "键帽不良", "胶路不良", "塑胶件不良", "CCD不良", "冷冻不良" };
+
+        string[] ProcessNameList = new[] { "点胶机", "按键贴合", "成品检测" };
 
         public UploadController(DataRepository databaseService, ILogger<UploadController> logger)
         {
@@ -49,6 +54,10 @@ namespace MesDataCollection.Controllers
                 }
                 if (model.TestResult != null && model.TestResult.Count > 0)
                 {
+                    if (ProcessNameList.Where(x => x != model.ProcessName).ToList().Count > 0)
+                    {
+                        return BadRequest("ProcessName值不正确；只允许传入 点胶机, 按键贴合, 成品检测");
+                    }
                     foreach (var result in model.TestResult)
                     {
                         if (result != null && result.ToUpper() == "PASS")

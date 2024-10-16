@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -154,7 +155,6 @@ namespace MesDataCollection.Controllers
                         list.Add(new CapsuleChart { name = testResult, value = defectsQty });
                     }
                 }
-               
                 return Ok(list);
             }
             catch (Exception ex)
@@ -166,28 +166,40 @@ namespace MesDataCollection.Controllers
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
-        public async Task<IActionResult> GetPlanQty()
+        public async Task<IActionResult> GetPlanQty(string LineName)
         {
             try
             {
+                if (string.IsNullOrEmpty(LineName) || LineName == "全部" || LineName == "undefined")
+                {
+                    LineName = "Total";
+                }
+
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day).AddDays(-15);
-                DateTime end = new DateTime(now.Year, now.Month, now.Day);
+                DateTime end = new DateTime(now.Year, now.Month, now.Day, 23, 59, 59);
                 var data = await _databaseService.GetMesPlan(start, end);
+                var ActualQty = await _databaseService.GetActualQty(start, end, LineName);
+
 
                 List<string> datelist = new List<string>();
-                List<long> Planlist = new List<long>();
                 List<long> Actuallist = new List<long>();
                 for (DateTime i = start; i <= end; i = i.AddDays(1))
                 {
                     datelist.Add(i.ToString("yyyy-MM-dd"));
+                    Actuallist.Add(ActualQty?.FirstOrDefault(x => x.start_time == i)?.ActualQty ?? 0);
+                }
+                List<string> plandate = new List<string>();
+                List<long> Planlist = new List<long>();
+                List<long> planlist1 = new List<long>();
+                foreach (var date in data) {
 
-                    Planlist.Add(data?.FirstOrDefault(x => x.start_time == i)?.plan_quantity ?? 0);
-                    Actuallist.Add(data?.FirstOrDefault(x => x.start_time == i)?.ActualQty ?? 0);
+                    plandate.Add(date.start_time.ToString());
+                    Planlist.Add(date.plan_quantity);
+                    planlist1.Add(date.ActualQty);
                 }
 
-
-                return Ok(new { date = datelist, Planlist = Planlist, Actuallist = Actuallist });
+                return Ok(new { date = datelist, plandate = plandate, planlist1= planlist1, Planlist = Planlist, Actuallist = Actuallist });
             }
             catch (Exception ex)
             {
@@ -258,14 +270,19 @@ namespace MesDataCollection.Controllers
 
         [HttpGet]
         [Route("api/[controller]/[action]")]
-        public async Task<IActionResult> GetDayQty()
+        public async Task<IActionResult> GetDayQty(string LineName)
         {
             try
             {
+                if (string.IsNullOrEmpty(LineName) || LineName == "全部" || LineName == "undefined")
+                {
+                    LineName = "Total";
+                }
+
                 DateTime now = DateTime.Now;
                 DateTime start = new DateTime(now.Year, now.Month, now.Day).AddDays(-15);
                 DateTime end = new DateTime(now.Year, now.Month, now.Day);
-                var data = await _databaseService.GetDayQty();
+                var data = await _databaseService.GetDayQty(LineName);
                 if (data != null)
                 {
                     string[] fieldValues = ConvertEntityFieldsToStringArray(data);
